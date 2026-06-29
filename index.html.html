@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>North Region — August Tournament</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #C9A84C; --gold-light: #E8C97A; --dark: #0F1117; --surface: #181C26;
+    --card: #1E2330; --border: #2A3044; --text: #E8EAF0; --muted: #6B7492;
+    --win: #1a3a2a; --win-border: #2ECC71; --lose: #3a1a1a; --lose-border: #E74C3C;
+    --bye: #5B6EBD; --purple: #8B44B0; --purple-light: #CF8AEF;
+  }
+  body { background: var(--dark); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; padding: 32px 24px 80px; }
+  header { text-align: center; margin-bottom: 40px; }
+  .title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(32px, 5vw, 58px); letter-spacing: 0.06em; color: var(--gold); line-height: 1; }
+  .subtitle { font-size: 12px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 6px; }
+  .prizes { display: flex; justify-content: center; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
+  .prize-badge { display: inline-flex; flex-direction: column; align-items: center; padding: 10px 20px; border-radius: 4px; }
+  .prize-badge.gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--dark); }
+  .prize-badge.silver { background: linear-gradient(135deg, #5B3D8A, #8B44B0); color: white; }
+  .prize-badge .prize-amount { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 0.05em; line-height: 1; }
+  .prize-badge .prize-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+
+  .rules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; max-width: 900px; margin: 0 auto 44px; }
+  .rule-card { background: var(--card); border: 1px solid var(--border); border-top: 2px solid var(--gold); padding: 14px; border-radius: 4px; }
+  .rule-week { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--gold); letter-spacing: 0.06em; }
+  .rule-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin: 3px 0 5px; }
+  .rule-threshold { font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .rule-threshold strong { color: var(--gold-light); }
+
+  .section-label { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.1em; color: var(--gold); margin-bottom: 16px; padding-bottom: 6px; border-bottom: 1px solid var(--border); max-width: 1300px; margin-left: auto; margin-right: auto; }
+  .section-label.lb { color: var(--purple); margin-top: 52px; }
+
+  .bracket-scroll { overflow-x: auto; padding-bottom: 12px; max-width: 1300px; margin: 0 auto; }
+  .bracket { display: flex; gap: 0; align-items: flex-start; min-width: max-content; }
+
+  .round { display: flex; flex-direction: column; }
+  .round-header { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); text-align: center; padding: 0 8px 10px; white-space: nowrap; }
+  .round-matches { display: flex; flex-direction: column; }
+
+  .match-slot { display: flex; flex-direction: column; justify-content: center; padding: 6px 0; }
+  .match { background: var(--card); border: 1px solid var(--border); border-radius: 4px; margin: 0 6px; overflow: hidden; min-width: 170px; }
+  .match-label { background: var(--surface); font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 3px 8px; border-bottom: 1px solid var(--border); }
+
+  .competitor {
+    display: flex; align-items: center; padding: 7px 10px; font-size: 12px; font-weight: 500; gap: 6px;
+    border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.12s; user-select: none; position: relative;
+  }
+  .competitor:last-child { border-bottom: none; }
+  .competitor:hover:not(.bye-slot):not(.tbd-slot):not(.eliminated) { background: #252c3d; }
+  .competitor.winner { background: var(--win); border-left: 3px solid var(--win-border); }
+  .competitor.loser { background: var(--lose); border-left: 3px solid var(--lose-border); opacity: 0.6; }
+  .competitor.bye-slot { cursor: default; opacity: 0.5; }
+  .competitor.tbd-slot { cursor: default; }
+  .competitor.eliminated { cursor: default; opacity: 0.4; }
+
+  .seed { font-size: 9px; color: var(--muted); min-width: 14px; }
+  .cname { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tbd-text { color: var(--muted); font-style: italic; font-size: 11px; }
+  .bye-tag { font-size: 9px; background: var(--bye); color: white; padding: 1px 5px; border-radius: 2px; font-weight: 700; }
+  .win-icon { font-size: 10px; margin-left: auto; }
+
+  .connector { width: 20px; display: flex; flex-direction: column; align-self: stretch; }
+
+  .champion-wrap { display: flex; align-items: center; padding: 0 12px; }
+  .champion-card { border: 1px solid var(--gold); border-radius: 4px; padding: 18px 14px; text-align: center; background: linear-gradient(135deg, #1a1500, #2a2000); min-width: 140px; }
+  .champion-card.lb-champ { border-color: var(--purple); background: linear-gradient(135deg, #12001a, #1e0030); }
+  .champ-label { font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 0.15em; color: var(--gold); display: block; margin-bottom: 6px; }
+  .champ-label.lb { color: var(--purple-light); }
+  .champ-name { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--gold-light); letter-spacing: 0.04em; min-height: 28px; }
+  .champ-name.lb { color: var(--purple-light); }
+  .champ-prize { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .reset-btn { display: block; margin: 32px auto 0; background: transparent; border: 1px solid var(--border); color: var(--muted); font-size: 12px; padding: 8px 20px; border-radius: 4px; cursor: pointer; font-family: 'Inter', sans-serif; letter-spacing: 0.05em; transition: all 0.15s; }
+  .reset-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  .note { max-width: 1300px; margin: 36px auto 0; background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--gold); padding: 14px 18px; font-size: 12px; color: var(--muted); line-height: 1.7; border-radius: 0 4px 4px 0; }
+  .note strong { color: var(--text); }
+
+  .grand-final-wrap { max-width: 1300px; margin: 52px auto 0; }
+  .grand-final-inner { display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; }
+  .gf-slot { background: var(--card); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; min-width: 170px; }
+  .gf-label { background: var(--surface); font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 3px 10px; border-bottom: 1px solid var(--border); text-align: center; }
+  .gf-vs { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--gold); letter-spacing: 0.1em; }
+  .grand-final-champ { border: 1px solid var(--gold); border-radius: 4px; padding: 20px 18px; text-align: center; background: linear-gradient(135deg, #1a1500, #2a2000); min-width: 160px; }
+  .grand-final-champ .champ-label { font-size: 13px; }
+  .grand-final-champ .champ-name { font-size: 28px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">North Region Tournament</div>
+  <div class="subtitle">August 2025 — Recruiting Championship</div>
+  <div class="prizes">
+    <div class="prize-badge gold"><span class="prize-amount">$2,000</span><span class="prize-label">🏆 Grand Champion</span></div>
+    <div class="prize-badge silver"><span class="prize-amount">$1,000</span><span class="prize-label">⚔️ Losers Bracket Champion</span></div>
+  </div>
+</header>
+
+<div class="rules-grid">
+  <div class="rule-card"><div class="rule-week">Week 1</div><div class="rule-title">LI Outreach</div><div class="rule-threshold">Highest <strong>response rate %</strong> wins · Min: <strong>40 messages</strong></div></div>
+  <div class="rule-card"><div class="rule-week">Week 2</div><div class="rule-title">TA Screens</div><div class="rule-threshold">Most <strong>screens</strong> wins · Min: <strong>10 screens</strong> · Proof: Metaview link + name</div></div>
+  <div class="rule-card"><div class="rule-week">Week 3</div><div class="rule-title">Submittals & Interviews</div><div class="rule-threshold">Most <strong>submittals + interviews</strong> wins · Min: <strong>5 submittals</strong></div></div>
+  <div class="rule-card"><div class="rule-week">Week 4</div><div class="rule-title">Offers Accepted</div><div class="rule-threshold">Most <strong>offers accepted</strong> in August · Min: <strong>3 offers</strong></div></div>
+</div>
+
+<div id="app"></div>
+
+<script>
+const RECRUITERS = [
+  "Brent Paton","Damon DeJesus","David Cuevas","Hailey McCann","Mark Hackett",
+  "Tyler Hendrix","Otto Thomas","Max Landau","Hunter Fouts","Ashley Smith",
+  "Amanda Matthews","Kate Cunningham","Kyle Chaves","Bryan Adams","Charlie Slack"
+];
+
+// Round labels per bracket
+const WB_ROUND_LABELS = ["Round 1 — Week 1","Quarterfinals — Week 2","Semifinals — Week 3","Final — Week 4"];
+const LB_ROUND_LABELS = ["LB Rd 1 — Week 2","LB Rd 2 — Week 3","LB Semis — Week 3","LB Final — Week 4"];
+
+// State
+let state = null;
+
+function initState() {
+  // 15 players -> 16-slot bracket, seed #16 = BYE
+  const seeds = [...RECRUITERS, null]; // null = BYE
+  // Standard bracket seeding pairs: 1v16, 8v9, 5v12, 4v13, 3v14, 6v11, 7v10, 2v15
+  const order = [0,15, 7,8, 4,11, 3,12, 2,13, 5,10, 6,9, 1,14];
+  const r1 = [];
+  for (let i = 0; i < 8; i++) {
+    r1.push({ p1: seeds[order[i*2]], p2: seeds[order[i*2+1]], winner: null, loser: null });
+  }
+
+  return {
+    wb: [
+      r1,
+      Array(4).fill(null).map(()=>({p1:null,p2:null,winner:null,loser:null})),
+      Array(2).fill(null).map(()=>({p1:null,p2:null,winner:null,loser:null})),
+      Array(1).fill(null).map(()=>({p1:null,p2:null,winner:null,loser:null})),
+    ],
+    lb: [
+      Array(4).fill(null).map(()=>({p1:null,p2:null,winner:null,loser:null})),
+      Array(4).fill(null).map(()=>({p1:null,p2:null,winner:null,loser:null})),
+      Array(2).fill(null).map(()=>({p1:null,p2:null,winner:null,loser:null})),
+      Array(1).fill(null).map(()=>({p1:null,p2:null,winner:null,loser:null})),
+    ],
+    grandFinal: { p1: null, p2: null, winner: null },
+    wbChamp: null,
+    lbChamp: null,
+  };
+}
+
+function propagate() {
+  const s = state;
+
+  // Auto-advance BYE in WB R1
+  s.wb[0].forEach(m => {
+    if (m.p2 === null && m.p1 !== null && m.winner === null) {
+      m.winner = m.p1; m.loser = null;
+    }
+  });
+
+  // WB round propagation
+  for (let r = 0; r < 3; r++) {
+    const next = s.wb[r+1];
+    for (let i = 0; i < s.wb[r].length; i++) {
+      const slot = Math.floor(i/2);
+      const pos = i % 2 === 0 ? 'p1' : 'p2';
+      if (s.wb[r][i].winner) next[slot][pos] = s.wb[r][i].winner;
+    }
+  }
+
+  // WB champ
+  if (s.wb[3][0].winner) s.wbChamp = s.wb[3][0].winner;
+
+  // LB population from WB losers
+  // LB R1: losers from WB R1 (matches 0-7) -> 4 matches
+  for (let i = 0; i < 4; i++) {
+    const l1 = s.wb[0][i*2].loser;
+    const l2 = s.wb[0][i*2+1].loser;
+    if (l1) s.lb[0][i].p1 = l1;
+    if (l2) s.lb[0][i].p2 = l2;
+  }
+  // LB R2: winners of LB R1 vs losers of WB QF
+  for (let i = 0; i < 4; i++) {
+    if (s.lb[0][i].winner) s.lb[1][i].p1 = s.lb[0][i].winner;
+    if (s.wb[1][i].loser) s.lb[1][i].p2 = s.wb[1][i].loser;
+  }
+  // LB Semis: winners of LB R2 pairs
+  for (let i = 0; i < 2; i++) {
+    if (s.lb[1][i*2].winner) s.lb[2][i].p1 = s.lb[1][i*2].winner;
+    if (s.lb[1][i*2+1].winner) s.lb[2][i].p2 = s.lb[1][i*2+1].winner;
+  }
+  // LB Final
+  if (s.lb[2][0].winner) s.lb[3][0].p1 = s.lb[2][0].winner;
+  if (s.lb[2][1].winner) s.lb[3][0].p2 = s.lb[2][1].winner;
+  // LB champ
+  if (s.lb[3][0].winner) s.lbChamp = s.lb[3][0].winner;
+
+  // Grand Final
+  if (s.wbChamp) s.grandFinal.p1 = s.wbChamp;
+  if (s.lbChamp) s.grandFinal.p2 = s.lbChamp;
+}
+
+function pickWinner(bracket, round, matchIdx, playerKey) {
+  const match = state[bracket][round][matchIdx];
+  const winner = match[playerKey];
+  if (!winner) return;
+  const loser = playerKey === 'p1' ? match.p2 : match.p1;
+
+  // If clicking same winner again, undo
+  if (match.winner === winner) {
+    match.winner = null; match.loser = null;
+    clearDownstream(bracket, round, matchIdx, winner, loser);
+  } else {
+    match.winner = winner; match.loser = loser;
+  }
+  propagate();
+  render();
+}
+
+function pickGrandFinalWinner(playerKey) {
+  const gf = state.grandFinal;
+  const winner = gf[playerKey];
+  if (!winner) return;
+  if (gf.winner === winner) { gf.winner = null; } else { gf.winner = winner; }
+  render();
+}
+
+function clearDownstream(bracket, round, matchIdx, winner, loser) {
+  // Clear the slot that this winner would have filled in the next round
+  if (bracket === 'wb') {
+    if (round < 3) {
+      const nextMatch = state.wb[round+1][Math.floor(matchIdx/2)];
+      const pos = matchIdx % 2 === 0 ? 'p1' : 'p2';
+      if (nextMatch[pos] === winner) {
+        nextMatch[pos] = null;
+        if (nextMatch.winner === winner) { nextMatch.winner = null; nextMatch.loser = null; clearDownstream('wb', round+1, Math.floor(matchIdx/2), winner, null); }
+      }
+    }
+    // Clear loser from LB
+    if (loser) {
+      if (round === 0) {
+        const lbMatch = state.lb[0][Math.floor(matchIdx/2)];
+        const lbPos = matchIdx % 2 === 0 ? 'p1' : 'p2';
+        if (lbMatch[lbPos] === loser) lbMatch[lbPos] = null;
+      } else if (round === 1) {
+        const lbMatch = state.lb[1][matchIdx];
+        if (lbMatch.p2 === loser) lbMatch.p2 = null;
+      }
+    }
+  }
+  if (bracket === 'lb') {
+    if (round < 3) {
+      const nextSlot = Math.floor(matchIdx/2);
+      const pos = matchIdx % 2 === 0 ? 'p1' : 'p2';
+      if (round === 0 || round === 1) {
+        const nextMatch = state.lb[round+1][nextSlot] || state.lb[round+1][Math.floor(matchIdx/2)];
+        if (nextMatch && nextMatch[pos] === winner) {
+          nextMatch[pos] = null;
+          if (nextMatch.winner === winner) { nextMatch.winner = null; nextMatch.loser = null; }
+        }
+      } else if (round === 2) {
+        const nextMatch = state.lb[3][0];
+        if (nextMatch[pos] === winner) {
+          nextMatch[pos] = null;
+          if (nextMatch.winner === winner) { nextMatch.winner = null; nextMatch.loser = null; }
+        }
+      }
+    }
+  }
+  // Clear grand final
+  if (state.grandFinal.p1 === winner || state.grandFinal.p2 === winner) {
+    if (state.grandFinal.p1 === winner) state.grandFinal.p1 = null;
+    if (state.grandFinal.p2 === winner) state.grandFinal.p2 = null;
+    state.grandFinal.winner = null;
+  }
+  state.wbChamp = state.wb[3][0].winner;
+  state.lbChamp = state.lb[3][0].winner;
+}
+
+function renderMatch(bracket, round, matchIdx, match, heightMultiplier) {
+  const div = document.createElement('div');
+  div.className = 'match-slot';
+  div.style.flex = heightMultiplier;
+
+  const matchDiv = document.createElement('div');
+  matchDiv.className = 'match';
+
+  const label = document.createElement('div');
+  label.className = 'match-label';
+  label.textContent = `${bracket === 'wb' ? 'W' : 'L'}B ${WB_ROUND_LABELS[round].split('—')[0].trim()} · M${matchIdx+1}`;
+  if (bracket === 'lb') label.textContent = `LB ${LB_ROUND_LABELS[round].split('—')[0].trim()} · M${matchIdx+1}`;
+  matchDiv.appendChild(label);
+
+  ['p1','p2'].forEach(pk => {
+    const name = match[pk];
+    const comp = document.createElement('div');
+
+    if (name === null && pk === 'p2' && bracket === 'wb' && round === 0 && match.p1 !== null) {
+      // BYE slot
+      comp.className = 'competitor bye-slot';
+      comp.innerHTML = `<span class="cname tbd-text">— BYE —</span><span class="bye-tag">Auto ✓</span>`;
+    } else if (!name) {
+      comp.className = 'competitor tbd-slot';
+      comp.innerHTML = `<span class="cname tbd-text">TBD</span>`;
+    } else {
+      const isWinner = match.winner === name;
+      const isLoser = match.loser === name;
+      comp.className = 'competitor' + (isWinner ? ' winner' : '') + (isLoser ? ' loser' : '');
+      if (isLoser) comp.classList.add('eliminated');
+      const shortName = name.split(' ')[0] + ' ' + name.split(' ')[1][0] + '.';
+      comp.innerHTML = `<span class="cname">${shortName}</span>${isWinner ? '<span class="win-icon">✓</span>' : ''}`;
+      if (!isLoser) {
+        comp.addEventListener('click', () => {
+          if (bracket === 'wb') pickWinner('wb', round, matchIdx, pk);
+          else pickWinner('lb', round, matchIdx, pk);
+        });
+        comp.title = `Click to set ${name} as winner`;
+      }
+    }
+    matchDiv.appendChild(comp);
+  });
+
+  div.appendChild(matchDiv);
+  return div;
+}
+
+function renderBracket(bracket, rounds, roundLabels, matchesPerRound) {
+  const scrollWrap = document.createElement('div');
+  scrollWrap.className = 'bracket-scroll';
+  const bracketDiv = document.createElement('div');
+  bracketDiv.className = 'bracket';
+  scrollWrap.appendChild(bracketDiv);
+
+  rounds.forEach((roundMatches, r) => {
+    const roundDiv = document.createElement('div');
+    roundDiv.className = 'round';
+
+    const header = document.createElement('div');
+    header.className = 'round-header';
+    header.textContent = roundLabels[r];
+    roundDiv.appendChild(header);
+
+    const matchesDiv = document.createElement('div');
+    matchesDiv.className = 'round-matches';
+
+    const heightMult = Math.pow(2, r);
+    roundMatches.forEach((match, mi) => {
+      matchesDiv.appendChild(renderMatch(bracket, r, mi, match, heightMult));
+    });
+
+    roundDiv.appendChild(matchesDiv);
+    bracketDiv.appendChild(roundDiv);
+
+    // connector
+    if (r < rounds.length - 1) {
+      const conn = document.createElement('div');
+      conn.className = 'connector';
+      bracketDiv.appendChild(conn);
+    }
+  });
+
+  // Champion slot
+  const champWrap = document.createElement('div');
+  champWrap.className = 'champion-wrap';
+  const champCard = document.createElement('div');
+  champCard.className = bracket === 'wb' ? 'champion-card' : 'champion-card lb-champ';
+
+  const champName = bracket === 'wb' ? (state.wbChamp || '') : (state.lbChamp || '');
+  champCard.innerHTML = `
+    <span class="champ-label ${bracket === 'lb' ? 'lb' : ''}">${bracket === 'wb' ? '🏆 WB Champ' : '⚔️ LB Champ'}</span>
+    <div class="champ-name ${bracket === 'lb' ? 'lb' : ''}">${champName || '—'}</div>
+    <div class="champ-prize">${bracket === 'wb' ? 'Advances to Grand Final' : '$1,000 Prize'}</div>
+  `;
+  champWrap.appendChild(champCard);
+  bracketDiv.appendChild(champWrap);
+
+  return scrollWrap;
+}
+
+function render() {
+  propagate();
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+
+  // Winners Bracket
+  const wbLabel = document.createElement('div');
+  wbLabel.className = 'section-label';
+  wbLabel.textContent = 'Winners Bracket';
+  app.appendChild(wbLabel);
+  app.appendChild(renderBracket('wb', state.wb, WB_ROUND_LABELS, [8,4,2,1]));
+
+  // Losers Bracket
+  const lbLabel = document.createElement('div');
+  lbLabel.className = 'section-label lb';
+  lbLabel.textContent = 'Losers Bracket — Stay Alive';
+  app.appendChild(lbLabel);
+  app.appendChild(renderBracket('lb', state.lb, LB_ROUND_LABELS, [4,4,2,1]));
+
+  // Grand Final
+  const gfWrap = document.createElement('div');
+  gfWrap.className = 'grand-final-wrap';
+  const gfLabel = document.createElement('div');
+  gfLabel.className = 'section-label';
+  gfLabel.style.borderColor = '#C9A84C';
+  gfLabel.textContent = '🏆 Grand Final';
+  gfWrap.appendChild(gfLabel);
+
+  const gfInner = document.createElement('div');
+  gfInner.className = 'grand-final-inner';
+
+  const gf = state.grandFinal;
+  ['p1','p2'].forEach((pk, i) => {
+    const name = gf[pk];
+    const slot = document.createElement('div');
+    slot.className = 'gf-slot';
+    const slotLabel = document.createElement('div');
+    slotLabel.className = 'gf-label';
+    slotLabel.textContent = pk === 'p1' ? 'WB Champion' : 'LB Champion';
+    slot.appendChild(slotLabel);
+    const comp = document.createElement('div');
+    const isWinner = gf.winner === name;
+    const isLoser = gf.winner && gf.winner !== name;
+    comp.className = 'competitor' + (isWinner ? ' winner' : '') + (isLoser ? ' loser' : '') + (!name ? ' tbd-slot' : '');
+    if (name) {
+      comp.innerHTML = `<span class="cname">${name}</span>${isWinner ? '<span class="win-icon">✓</span>' : ''}`;
+      if (!isLoser) comp.addEventListener('click', () => pickGrandFinalWinner(pk));
+      comp.title = name ? `Click to set ${name} as Grand Champion` : '';
+    } else {
+      comp.innerHTML = `<span class="cname tbd-text">TBD</span>`;
+    }
+    slot.appendChild(comp);
+    gfInner.appendChild(slot);
+
+    if (i === 0) {
+      const vs = document.createElement('div');
+      vs.className = 'gf-vs';
+      vs.textContent = 'VS';
+      gfInner.appendChild(vs);
+    }
+  });
+
+  const gfChamp = document.createElement('div');
+  gfChamp.className = 'grand-final-champ';
+  gfChamp.innerHTML = `
+    <span class="champ-label">🥇 Grand Champion</span>
+    <div class="champ-name">${gf.winner || '—'}</div>
+    <div class="champ-prize">$2,000 Prize</div>
+  `;
+  gfInner.appendChild(gfChamp);
+
+  gfWrap.appendChild(gfInner);
+  app.appendChild(gfWrap);
+
+  // Reset button
+  const resetBtn = document.createElement('button');
+  resetBtn.className = 'reset-btn';
+  resetBtn.textContent = 'Reset Bracket';
+  resetBtn.addEventListener('click', () => { state = initState(); render(); });
+  app.appendChild(resetBtn);
+
+  // Note
+  const note = document.createElement('div');
+  note.className = 'note';
+  note.innerHTML = `<strong>How to use:</strong> Click a recruiter's name to mark them as the winner of that match. The winner advances automatically; the loser drops to the Losers Bracket. Click again to undo. · <strong>Threshold rule:</strong> If a recruiter doesn't meet the weekly minimum, they forfeit regardless of raw numbers. · <strong>Seeds are placeholders</strong> — re-seed before launch based on performance or randomize.`;
+  app.appendChild(note);
+}
+
+state = initState();
+render();
+</script>
+</body>
+</html>
